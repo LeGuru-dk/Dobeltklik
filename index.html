@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #f4f7f6; user-select: none; }
+        #game-wrapper { max-width: 800px; margin: 20px auto; border: 3px solid #333; border-radius: 8px; overflow: hidden; background: white; }
+        #info-bar { background: #333; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
+        #instruction { font-weight: bold; font-size: 1.1em; color: #ffcc00; }
+        
+        /* Klik-indikator stil */
+        #click-feedback { 
+            background: #444; padding: 10px 20px; display: flex; align-items: center; gap: 10px; color: #fff; border-bottom: 1px solid #555;
+        }
+        #light-indicator { 
+            width: 20px; height: 20px; border-radius: 50%; background: #666; transition: background 0.1s;
+        }
+        #light-indicator.active { background: #00ff00; box-shadow: 0 0 10px #00ff00; }
+
+        #game-area { width: 100%; height: 450px; position: relative; background-color: #e9ecef; padding: 20px; box-sizing: border-box; display: flex; flex-wrap: wrap; justify-content: center; align-content: center; gap: 30px; }
+        
+        .folder-container {
+            width: 120px; height: 120px; text-align: center; cursor: pointer; padding: 10px; border-radius: 8px; border: 2px solid transparent;
+        }
+        .folder-container.selected { background-color: #e0f0ff; border: 2px solid #007bff; }
+        .folder-icon { font-size: 60px; margin-bottom: 5px; display: block; }
+        .folder-label { font-size: 14px; color: #333; font-weight: bold; }
+        .folder-container.opened .folder-icon { color: #28a745; }
+        .folder-container.opened .folder-label { color: #28a745; }
+
+        #reset-btn { 
+            display: none; padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 100;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-wrapper">
+    <div id="info-bar">
+        <div>Dobbeltklik-Træner</div>
+        <div id="instruction">Prøv at åbne mapperne</div>
+        <div>Åbnet: <span id="opened-count">0</span>/6</div>
+    </div>
+
+    <div id="click-feedback">
+        <div id="light-indicator"></div>
+        <span id="click-text">Klar til klik...</span>
+    </div>
+
+    <div id="game-area">
+        <button id="reset-btn" onclick="location.reload()">Prøv igen?</button>
+    </div>
+</div>
+
+<script>
+    const gameArea = document.getElementById('game-area');
+    const openedCountDisplay = document.getElementById('opened-count');
+    const instruction = document.getElementById('instruction');
+    const resetBtn = document.getElementById('reset-btn');
+    const light = document.getElementById('light-indicator');
+    const clickText = document.getElementById('click-text');
+
+    let totalFolders = 6;
+    let openedCount = 0;
+    let clickCounter = 0;
+    let resetTimer;
+
+    // Funktion til at vise klik-feedback
+    function handleGlobalClick() {
+        clickCounter++;
+        
+        // Vis lyset
+        light.classList.add('active');
+        setTimeout(() => light.classList.remove('active'), 100);
+
+        // Opdater tekst
+        clickText.innerText = clickCounter === 1 ? "1 klik registreret" : "2 klik! (Dobbeltklik)";
+        clickText.style.color = clickCounter === 2 ? "#00ff00" : "#ffffff";
+
+        // Nulstil tælleren efter 500ms (grænsen for et dobbeltklik)
+        clearTimeout(resetTimer);
+        resetTimer = setTimeout(() => {
+            clickCounter = 0;
+            clickText.innerText = "Klar til klik...";
+            clickText.style.color = "#ffffff";
+        }, 500);
+    }
+
+    // Lyt efter klik i hele vinduet for at give feedback hver gang
+    window.addEventListener('mousedown', handleGlobalClick);
+
+    function createFolders() {
+        for (let i = 1; i <= totalFolders; i++) {
+            const folder = document.createElement('div');
+            folder.className = 'folder-container';
+            folder.innerHTML = `<span class="folder-icon">📁</span><span class="folder-label">Mappe ${i}</span>`;
+
+            folder.addEventListener('click', function() {
+                if (folder.classList.contains('opened')) return;
+                document.querySelectorAll('.folder-container').forEach(f => f.classList.remove('selected'));
+                folder.classList.add('selected');
+            });
+
+            folder.addEventListener('dblclick', function() {
+                if (folder.classList.contains('opened')) return;
+                folder.classList.remove('selected');
+                folder.classList.add('opened');
+                folder.innerHTML = `<span class="folder-icon">📂</span><span class="folder-label">Åbnet! ⭐</span>`;
+                openedCount++;
+                openedCountDisplay.innerText = openedCount;
+                
+                if (openedCount === totalFolders) {
+                    instruction.innerText = "Super! Du har åbnet alle mapperne.";
+                    resetBtn.style.display = 'block';
+                }
+            });
+            gameArea.appendChild(folder);
+        }
+    }
+
+    createFolders();
+</script>
+</body>
+</html>
